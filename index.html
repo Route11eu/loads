@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" translate="no" class="notranslate">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="google" content="notranslate">
+<meta http-equiv="Content-Language" content="en">
 <title>Route11 — Available Tank Loads</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -118,19 +120,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--g800);li
 @media(max-width:768px){
 .tbl-hdr{display:none}
 .date-hdr{position:sticky;top:56px;z-index:50;font-size:13px;padding:8px 14px}
-.cty-hdr{position:sticky;top:92px;z-index:49;padding:5px 14px;font-size:11px}
-.rr{display:flex;flex-wrap:wrap;padding:10px 14px;gap:4px 10px;grid-template-columns:none}
-.rr .c{padding:0;font-size:12px}
-.rr .c:nth-child(1){order:0;width:auto;font-size:11px;color:var(--g400);display:none}
-.rr .c:nth-child(2){order:1;flex:1;min-width:40%}
-.rr .c:nth-child(3){order:2;flex:1;min-width:40%}
-.rr .c:nth-child(4){order:3;width:100%;display:flex;flex-wrap:wrap;gap:3px;align-items:center}
-.rr .c:nth-child(5){order:4;width:100%;margin-top:4px}
-.rr .c .code{font-size:11px}.rr .c .city{font-size:11px}
+.cty-hdr{padding:5px 14px;font-size:11px}
+.rr{display:grid;grid-template-columns:1fr 1fr auto;grid-template-rows:auto auto;padding:10px 12px;gap:2px 8px;border-bottom:1px solid var(--g100)}
+.rr .c{padding:0}
+.rr .c:nth-child(1){display:none}
+.rr .c:nth-child(2){grid-column:1;grid-row:1;font-size:13px}
+.rr .c:nth-child(3){grid-column:2;grid-row:1;font-size:13px}
+.rr .c:nth-child(4){grid-column:1/3;grid-row:2;display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:2px}
+.rr .c:nth-child(5){grid-column:3;grid-row:1/3;display:flex;align-items:center}
+.rr .c .code{font-size:12px;font-weight:600}.rr .c .city{font-size:11px}
 .rr .c .dist{font-size:9px}
-.badge{font-size:9px;padding:2px 5px;margin-right:2px}
+.badge{font-size:8px;padding:1px 5px;margin-right:2px}
 .notes{font-size:10px}
-.btn-inq{width:100%;text-align:center;padding:8px;font-size:12px}
+.btn-inq{padding:6px 8px;font-size:10px;white-space:nowrap}
 .srch-row{flex-direction:column}.sg{min-width:100%}
 .stats{gap:4px;flex-wrap:wrap}.st-card{min-width:65px;padding:8px;flex:1}
 .st-card .n{font-size:18px}.st-card .l{font-size:9px}
