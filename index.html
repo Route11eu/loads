@@ -320,7 +320,7 @@ function setupAC(inputId,dropId,onSelect){
         _acTimer=setTimeout(async()=>{
             if(inp.value.trim().length<2)return;
             try{
-                const resp=await fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(inp.value.trim())+'&limit=5&lang=en&layer=city&layer=town&bbox=-10,35,35,72');
+                const resp=await fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(inp.value.trim())+'&limit=5&lang=en&layer=city&layer=town&osm_tag=place:city&osm_tag=place:town');
                 const data=await resp.json();
                 if(!data.features||data.features.length===0)return;
                 const existing=new Set();
@@ -370,7 +370,7 @@ async function resolveCity(inp,onSelect){
     const inc=allC.find(c=>c.toLowerCase().includes(vl));
     if(inc){inp.value=inc;onSelect({name:inc,...CDB[inc]});return true;}
     try{
-        const resp=await fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(v)+'&limit=1&lang=en&layer=city&layer=town&bbox=-10,35,35,72');
+        const resp=await fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(v)+'&limit=1&lang=en&layer=city&layer=town&osm_tag=place:city&osm_tag=place:town');
         const data=await resp.json();
         if(data.features&&data.features.length>0){
             const f=data.features[0];
@@ -390,6 +390,7 @@ async function resolveCity(inp,onSelect){
     }catch(e){console.log('Nominatim fallback error:',e);}
     return false;
 }
+
 
 
 function haversine(a1,o1,a2,o2){if(!a1||!o1||!a2||!o2)return 99999;const R=6371,dL=(a2-a1)*Math.PI/180,dO=(o2-o1)*Math.PI/180,a=Math.sin(dL/2)**2+Math.cos(a1*Math.PI/180)*Math.cos(a2*Math.PI/180)*Math.sin(dO/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
