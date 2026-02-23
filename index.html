@@ -266,7 +266,7 @@ const CDB={
 "Leimen":{la:49.35,lo:8.69},"Salzbergen":{la:52.31,lo:7.35},"Rieux":{la:49.27,lo:2.51},
 "Worms":{la:49.63,lo:8.36},"Otrokowice":{la:49.21,lo:17.53},"Lenzing":{la:47.97,lo:13.60},
 "Märjamaa":{la:58.89,lo:24.43},"Marjamaa":{la:58.89,lo:24.43}
-};
+,"Monachium":{la:48.14,lo:11.58},"Kolonia":{la:50.94,lo:6.96},"Drezno":{la:51.05,lo:13.74},"Augsburg":{la:48.37,lo:10.9},"Nürnberg":{la:49.45,lo:11.08},"Nurnberg":{la:49.45,lo:11.08},"Nuremberg":{la:49.45,lo:11.08},"Aachen":{la:50.78,lo:6.08},"Mainz":{la:50.0,lo:8.27},"Braunschweig":{la:52.27,lo:10.52},"Regensburg":{la:49.01,lo:12.1},"Trier":{la:49.75,lo:6.64},"Düsseldorf":{la:51.23,lo:6.78},"Dusseldorf":{la:51.23,lo:6.78},"Bonn":{la:50.74,lo:7.1},"Bremerhaven":{la:53.54,lo:8.58},"Bremen":{la:53.08,lo:8.8},"Wolfsburg":{la:52.42,lo:10.79},"Kassel":{la:51.31,lo:9.5},"Kiel":{la:54.32,lo:10.14},"Rostock":{la:54.09,lo:12.1},"Freiburg":{la:47.99,lo:7.85},"Karlsruhe":{la:49.01,lo:8.4},"Wiesbaden":{la:50.08,lo:8.24},"Krefeld":{la:51.34,lo:6.56},"Gandawa":{la:51.05,lo:3.72},"Bruksela":{la:50.85,lo:4.35},"Antwerpja":{la:51.22,lo:4.4},"Antwerpia":{la:51.22,lo:4.4},"Lizbona":{la:38.72,lo:-9.14},"Zurych":{la:47.38,lo:8.54},"Berno":{la:46.95,lo:7.45},"Bazylea":{la:47.56,lo:7.59},"Madryt":{la:40.42,lo:-3.7},"Liege":{la:50.63,lo:5.57},"Luik":{la:50.63,lo:5.57},"Venice":{la:45.44,lo:12.32},"Venezia":{la:45.44,lo:12.32},"Rome":{la:41.9,lo:12.5},"Roma":{la:41.9,lo:12.5},"Florence":{la:43.77,lo:11.25},"Firenze":{la:43.77,lo:11.25},"Naples":{la:40.85,lo:14.27},"Napoli":{la:40.85,lo:14.27},"Genoa":{la:44.41,lo:8.93},"Genova":{la:44.41,lo:8.93},"Turin":{la:45.07,lo:7.69},"Torino":{la:45.07,lo:7.69},"Seville":{la:37.39,lo:-5.98},"Sevilla":{la:37.39,lo:-5.98},"Lisbon":{la:38.72,lo:-9.14},"Lisboa":{la:38.72,lo:-9.14},"Malaga":{la:36.72,lo:-4.42},"Valencia":{la:39.47,lo:-0.38},"Bilbao":{la:43.26,lo:-2.93},"Brugge":{la:51.21,lo:3.22},"Bruges":{la:51.21,lo:3.22},"Charleroi":{la:50.41,lo:4.44},"Namur":{la:50.47,lo:4.87},"Leuven":{la:50.88,lo:4.7},"Mechelen":{la:51.03,lo:4.48},"Den Haag":{la:52.08,lo:4.3},"The Hague":{la:52.08,lo:4.3},"Utrecht":{la:52.09,lo:5.12},"Eindhoven":{la:51.44,lo:5.47},"Groningen":{la:53.22,lo:6.57},"Moerdijk":{la:51.7,lo:4.63},"Dordrecht":{la:51.81,lo:4.67},"Vlaardingen":{la:51.91,lo:4.34},"Wenecja":{la:45.44,lo:12.32},"Florencja":{la:43.77,lo:11.25},"Neapol":{la:40.85,lo:14.27},"Genua":{la:44.41,lo:8.93},"Turyn":{la:45.07,lo:7.69},"Sewilla":{la:37.39,lo:-5.98}};
 
 // Also add all cities from routes to CDB
 ROUTES.forEach(r=>{
@@ -299,6 +299,7 @@ function populateDates(){
 }
 
 // AUTOCOMPLETE
+var _acTimer=null;
 function setupAC(inputId,dropId,onSelect){
     const inp=document.getElementById(inputId),drop=document.getElementById(dropId);
     const allC=Object.keys(CDB);
@@ -306,19 +307,39 @@ function setupAC(inputId,dropId,onSelect){
         const v=inp.value.trim().toLowerCase();
         drop.innerHTML='';
         if(v.length<2){drop.classList.remove('show');onSelect(null);return;}
-        let m=allC.filter(c=>c.toLowerCase().startsWith(v)).slice(0,6);
-        if(m.length===0) m=allC.filter(c=>c.toLowerCase().includes(v)).slice(0,6);
+        let m=allC.filter(c=>c.toLowerCase().startsWith(v)).slice(0,4);
+        if(m.length===0) m=allC.filter(c=>c.toLowerCase().includes(v)).slice(0,4);
         if(m.length>0){
             m.forEach(c=>{const it=document.createElement('div');it.className='ac-item';
             const inRoutes=ROUTES.some(r=>r.ln===c||r.un===c);
             it.innerHTML=inRoutes?c+' <span style="color:var(--blue);font-size:10px">★ in routes</span>':c;
             it.onclick=()=>{inp.value=c;onSelect({name:c,...CDB[c]});drop.classList.remove('show');};drop.appendChild(it);});
             drop.classList.add('show');
-        } else {
-            const it=document.createElement('div');it.className='ac-item';it.style.cssText='color:var(--g400);font-size:11px;line-height:1.4';
-            it.innerHTML='City not in database.<br>Press <b>Search</b> — we\'ll locate it automatically.';
-            drop.appendChild(it);drop.classList.add('show');
         }
+        if(_acTimer)clearTimeout(_acTimer);
+        _acTimer=setTimeout(async()=>{
+            try{
+                const resp=await fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(inp.value.trim())+'&limit=5&lang=en&layer=city&layer=town&bbox=-10,35,35,72');
+                const data=await resp.json();
+                if(!data.features||data.features.length===0)return;
+                const existing=new Set(Array.from(drop.querySelectorAll('.ac-item')).map(x=>x.textContent.replace(/ ★ in routes/,'').trim().toLowerCase()));
+                let added=0;
+                data.features.forEach(f=>{
+                    if(added>=4)return;
+                    const name=f.properties.name;
+                    const country=f.properties.country||'';
+                    const state=f.properties.state||'';
+                    if(!name||existing.has(name.toLowerCase()))return;
+                    existing.add(name.toLowerCase());
+                    const la=f.geometry.coordinates[1],lo=f.geometry.coordinates[0];
+                    const it=document.createElement('div');it.className='ac-item';
+                    it.innerHTML=name+' <small>'+[state,country].filter(Boolean).join(', ')+'</small>';
+                    it.onclick=()=>{inp.value=name;CDB[name]={la:la,lo:lo};onSelect({name:name,la:la,lo:lo});drop.classList.remove('show');};
+                    drop.appendChild(it);added++;
+                });
+                if(drop.children.length>0)drop.classList.add('show');
+            }catch(e){console.log('Photon error',e);}
+        },300);
     });
     inp.addEventListener('keydown',e=>{if(e.key==='Enter'){drop.classList.remove('show');applyFilters();}});
     inp.addEventListener('blur',()=>{setTimeout(()=>{drop.classList.remove('show');},200);});
