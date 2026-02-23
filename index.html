@@ -318,59 +318,79 @@ function setupAC(inputId,dropId,onSelect){
         }
         if(_acTimer)clearTimeout(_acTimer);
         _acTimer=setTimeout(async()=>{
+            if(inp.value.trim().length<2)return;
             try{
                 const resp=await fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(inp.value.trim())+'&limit=5&lang=en&layer=city&layer=town&bbox=-10,35,35,72');
                 const data=await resp.json();
                 if(!data.features||data.features.length===0)return;
-                const existing=new Set(Array.from(drop.querySelectorAll('.ac-item')).map(x=>x.textContent.replace(/ ★ in routes/,'').trim().toLowerCase()));
+                const existing=new Set();
+                drop.querySelectorAll('.ac-item').forEach(x=>{
+                    const t=x.textContent.replace(/★ in routes/,'').trim().toLowerCase();
+                    if(t)existing.add(t);
+                });
                 let added=0;
                 data.features.forEach(f=>{
                     if(added>=4)return;
-                    const name=f.properties.name;
-                    const country=f.properties.country||'';
-                    const state=f.properties.state||'';
-                    if(!name||existing.has(name.toLowerCase()))return;
+                    const p=f.properties;
+                    const name=p.name;
+                    if(!name)return;
+                    if(existing.has(name.toLowerCase()))return;
                     existing.add(name.toLowerCase());
                     const la=f.geometry.coordinates[1],lo=f.geometry.coordinates[0];
-                    const it=document.createElement('div');it.className='ac-item';
-                    it.innerHTML=name+' <small>'+[state,country].filter(Boolean).join(', ')+'</small>';
-                    it.onclick=()=>{inp.value=name;CDB[name]={la:la,lo:lo};onSelect({name:name,la:la,lo:lo});drop.classList.remove('show');};
-                    drop.appendChild(it);added++;
+                    const region=[p.state||'',p.country||''].filter(Boolean).join(', ');
+                    const it=document.createElement('div');
+                    it.className='ac-item';
+                    it.style.cssText='padding:8px 10px;cursor:pointer;font-size:12px;border-bottom:1px solid #eee';
+                    it.innerHTML='<b>'+name+'</b>'+(region?' <small style="color:#888">'+region+'</small>':'');
+                    it.onclick=()=>{
+                        inp.value=name;
+                        CDB[name]={la:la,lo:lo};
+                        onSelect({name:name,la:la,lo:lo});
+                        drop.classList.remove('show');
+                    };
+                    drop.appendChild(it);
+                    added++;
                 });
                 if(drop.children.length>0)drop.classList.add('show');
-            }catch(e){console.log('Photon error',e);}
-        },300);
+            }catch(e){console.log('Photon API error:',e);}
+        },400);
     });
     inp.addEventListener('keydown',e=>{if(e.key==='Enter'){drop.classList.remove('show');applyFilters();}});
     inp.addEventListener('blur',()=>{setTimeout(()=>{drop.classList.remove('show');},200);});
     document.addEventListener('click',e=>{if(!inp.contains(e.target)&&!drop.contains(e.target))drop.classList.remove('show');});
 }
-// Auto-select from DB or geocode via Nominatim
 async function resolveCity(inp,onSelect){
     const v=inp.value.trim();if(!v||v.length<2)return;
     const vl=v.toLowerCase();
     const allC=Object.keys(CDB);
-    // Try exact match
     const exact=allC.find(c=>c.toLowerCase()===vl);
     if(exact){inp.value=exact;onSelect({name:exact,...CDB[exact]});return true;}
-    // Try startsWith
     const sw=allC.find(c=>c.toLowerCase().startsWith(vl));
     if(sw){inp.value=sw;onSelect({name:sw,...CDB[sw]});return true;}
-    // Try includes
     const inc=allC.find(c=>c.toLowerCase().includes(vl));
     if(inc){inp.value=inc;onSelect({name:inc,...CDB[inc]});return true;}
-    // Fallback: Nominatim geocoding
+    try{
+        const resp=await fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(v)+'&limit=1&lang=en&layer=city&layer=town&bbox=-10,35,35,72');
+        const data=await resp.json();
+        if(data.features&&data.features.length>0){
+            const f=data.features[0];
+            const name=f.properties.name||v;
+            const la=f.geometry.coordinates[1],lo=f.geometry.coordinates[0];
+            CDB[name]={la:la,lo:lo};CDB[v]={la:la,lo:lo};
+            inp.value=name;onSelect({name:name,la:la,lo:lo});return true;
+        }
+    }catch(e){console.log('Photon fallback error:',e);}
     try{
         const resp=await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(v)+',Europe&format=json&limit=1&accept-language=en');
         const data=await resp.json();
         if(data.length>0){
             const city={name:v,la:parseFloat(data[0].lat),lo:parseFloat(data[0].lon)};
-            CDB[v]=city;
-            inp.value=v;onSelect(city);return true;
+            CDB[v]=city;inp.value=v;onSelect(city);return true;
         }
-    }catch(e){console.log('Geocoding failed',e);}
+    }catch(e){console.log('Nominatim fallback error:',e);}
     return false;
 }
+
 
 function haversine(a1,o1,a2,o2){if(!a1||!o1||!a2||!o2)return 99999;const R=6371,dL=(a2-a1)*Math.PI/180,dO=(o2-o1)*Math.PI/180,a=Math.sin(dL/2)**2+Math.cos(a1*Math.PI/180)*Math.cos(a2*Math.PI/180)*Math.sin(dO/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 
