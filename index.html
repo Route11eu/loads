@@ -625,7 +625,9 @@ function openInq(id){
 }
 function closeMo(){document.getElementById('moOverlay').classList.remove('show');curInqRoute=null;}
 
-function sendInquiry(){
+const INQUIRY_TRACKER_URL='https://script.google.com/macros/s/AKfycby4WCTnpXfmnb7vDJO0aksEkGvbnaDzeknHM1C2NuopwXov3zAVkXRBzJCl3NNuR5Cocg/exec';
+
+async function sendInquiry(){
     const comp=document.getElementById('iqComp').value.trim();
     const mail=document.getElementById('iqMail').value.trim();
     const phone=document.getElementById('iqPhone').value.trim();
@@ -634,23 +636,18 @@ function sendInquiry(){
     const hasMulti=document.getElementById('iqMulti').checked;
     const hasAdr=document.getElementById('iqAdr').checked;
     const availDate=document.getElementById('iqDate').value;
-
     if(!comp||!mail){alert('Please fill in company name and email.');return;}
     if(!mail.includes('@')){alert('Please enter a valid email.');return;}
-
     const r=curInqRoute;
     const btn=document.getElementById('btnSend');
-    btn.disabled=true;btn.textContent='Sending...';
-
+    btn.disabled=true;btn.textContent='Checking...';
     const ref='R11-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+String(r.id).padStart(3,'0');
-
     const tankInfo=[];
     if(hasMono)tankInfo.push('MONO');
     if(hasMulti)tankInfo.push('MULTI');
     if(hasAdr)tankInfo.push('ADR');
-
     const ownerEmail=r.se||'invoices@route11.eu';
-
+    const removeUrl=INQUIRY_TRACKER_URL+'?action=remove_page&loading='+encodeURIComponent(r.lc+' '+r.ln)+'&unloading='+encodeURIComponent(r.uc+' '+r.un)+'&date='+encodeURIComponent(r.dt)+'&ref='+encodeURIComponent(ref);
     const params={
         ref:ref,
         route_loading:r.lc+' '+r.ln,
@@ -667,23 +664,45 @@ function sendInquiry(){
         carrier_avail_date:availDate||'Not specified',
         carrier_message:msg||'(no message)',
         avail_info:(availDate?'Available from: '+availDate:''),
-        adr_info:r.adr?'ADR required: YES':'ADR required: NO'
+        adr_info:r.adr?'ADR required: YES':'ADR required: NO',
+        remove_url:removeUrl
     };
-
-    // EMAIL 1: To load owner (clean inquiry, no carrier data)
-    emailjs.send('service_sif5mg8','template_ljl2135',params)
-    .then(function(){
-        // EMAIL 2: To office (full carrier details)
-        return emailjs.send('service_sif5mg8','template_pobgzl7',params);
-    })
-    .then(function(){
+    let isDuplicate=false;let dupInfo=null;
+    try{
+        const checkResp=await fetch(INQUIRY_TRACKER_URL,{
+            method:'POST',
+            body:JSON.stringify({
+                action:'check_inquiry',
+                route_loading:params.route_loading,
+                route_unloading:params.route_unloading,
+                route_date:r.dt,
+                owner_email:ownerEmail,
+                carrier_company:comp,
+                carrier_email:mail,
+                carrier_phone:phone||'-',
+                route_desc:r.ln+' → '+r.un+' | '+r.dt,
+                ref:ref
+            })
+        });
+        const checkData=await checkResp.json();
+        isDuplicate=checkData.duplicate;
+        if(isDuplicate)dupInfo=checkData;
+    }catch(trackErr){console.warn('Tracker unavailable:',trackErr);}
+    btn.textContent='Sending...';
+    try{
+        if(isDuplicate){
+            params.carrier_message='⚠️ DUPLICATE INQUIRY\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nAlready inquired today at: '+(dupInfo.first_sent_at||'?')+'\nBy: '+(dupInfo.first_sent_by||'?')+'\nTotal today: '+((dupInfo.duplicate_count||0)+1)+'\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nNew from: '+comp+' ('+mail+')\nMessage: '+(msg||'(no message)');
+            await emailjs.send('service_sif5mg8','template_pobgzl7',params);
+        }else{
+            await emailjs.send('service_sif5mg8','template_ljl2135',params);
+            await emailjs.send('service_sif5mg8','template_pobgzl7',params);
+        }
         showSucc(ref);
-    })
-    .catch(function(err){
+    }catch(err){
         console.error('EmailJS error:',err);
         alert('Could not send inquiry. Please try again or contact office@route11.eu directly.');
         btn.disabled=false;btn.textContent='Send Inquiry';
-    });
+    }
 }
 
 function showSucc(ref){
