@@ -641,7 +641,7 @@ async function sendInquiry(){
     const r=curInqRoute;
     const btn=document.getElementById('btnSend');
     btn.disabled=true;btn.textContent='Checking...';
-    const ref='R11-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+String(r.id).padStart(3,'0');
+    const ref='R11-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+String(r.id).padStart(3,'0')+'-'+String(Date.now()).slice(-4);
     const tankInfo=[];
     if(hasMono)tankInfo.push('MONO');
     if(hasMulti)tankInfo.push('MULTI');
