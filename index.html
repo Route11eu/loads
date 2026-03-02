@@ -399,7 +399,16 @@ function haversine(a1,o1,a2,o2){if(!a1||!o1||!a2||!o2)return 99999;const R=6371,
 
 function parseDt(d){const[dd,mm,yy]=d.split('.').map(Number);return new Date(yy,mm-1,dd);}
 
-// FILTER
+// ============================================================
+// ROUTE11 FIX: applyFilters() - handles routes with missing coordinates
+// ============================================================
+// PROBLEM: Most routes have la:0, lo:0 (no geocoding).
+//          haversine(51.22, 4.40, 0, 0) = ~5800 km → filtered out at 100km radius
+// FIX: If route has no coords (la=0 or lo=0), match by CITY NAME instead of distance
+// ============================================================
+
+// Replace the ENTIRE applyFilters function in index.html with this:
+
 async function applyFilters(){
     // Auto-resolve cities (DB match or Nominatim geocoding)
     const lInp=document.getElementById('loadCity'),lDrop=document.getElementById('loadDrop');
@@ -413,14 +422,60 @@ async function applyFilters(){
     const tankV=document.getElementById('tankF').value;
     let f=[...ROUTES];
 
-    // Loading city filter
+    // Loading city filter — FIXED: handle missing coordinates
     if(selLoad){
-        f=f.filter(r=>{r._ldist=haversine(selLoad.la,selLoad.lo,r.la,r.lo);return r._ldist<=rad;});
+        const searchName=selLoad.name.toLowerCase();
+        f=f.filter(r=>{
+            // If route HAS coordinates → use distance
+            if(r.la && r.lo){
+                r._ldist=haversine(selLoad.la,selLoad.lo,r.la,r.lo);
+                return r._ldist<=rad;
+            }
+            // If route has NO coordinates → match by city name
+            const routeCity=r.ln.toLowerCase();
+            // Check: exact match, contains, or same postal code prefix
+            if(routeCity===searchName || routeCity.includes(searchName) || searchName.includes(routeCity)){
+                r._ldist=0; // Show as 0km (same city)
+                return true;
+            }
+            // Also check if CDB has coords for this route's city name
+            const cityCoords=CDB[r.ln];
+            if(cityCoords && cityCoords.la && cityCoords.lo){
+                r._ldist=haversine(selLoad.la,selLoad.lo,cityCoords.la,cityCoords.lo);
+                return r._ldist<=rad;
+            }
+            // No match possible — exclude
+            r._ldist=99999;
+            return false;
+        });
     }
-    // Unloading city filter
+
+    // Unloading city filter — FIXED: handle missing coordinates
     if(selUnload){
-        f=f.filter(r=>{r._udist=haversine(selUnload.la,selUnload.lo,r.ua,r.uo);return r._udist<=rad;});
+        const searchName=selUnload.name.toLowerCase();
+        f=f.filter(r=>{
+            // If route HAS coordinates → use distance
+            if(r.ua && r.uo){
+                r._udist=haversine(selUnload.la,selUnload.lo,r.ua,r.uo);
+                return r._udist<=rad;
+            }
+            // If route has NO coordinates → match by city name
+            const routeCity=r.un.toLowerCase();
+            if(routeCity===searchName || routeCity.includes(searchName) || searchName.includes(routeCity)){
+                r._udist=0;
+                return true;
+            }
+            // Also check CDB for coords
+            const cityCoords=CDB[r.un];
+            if(cityCoords && cityCoords.la && cityCoords.lo){
+                r._udist=haversine(selUnload.la,selUnload.lo,cityCoords.la,cityCoords.lo);
+                return r._udist<=rad;
+            }
+            r._udist=99999;
+            return false;
+        });
     }
+
     // Text fallback if no city selected but text entered
     const ltxt=document.getElementById('loadCity').value.trim().toLowerCase();
     const utxt=document.getElementById('unloadCity').value.trim().toLowerCase();
@@ -444,8 +499,26 @@ async function applyFilters(){
     // If 0 results but city selected, show nearest 3 loads
     if(f.length===0&&(selLoad||selUnload)){
         let nearest=[...ROUTES];
-        if(selLoad)nearest.forEach(r=>{r._ldist=haversine(selLoad.la,selLoad.lo,r.la,r.lo);});
-        if(selUnload)nearest.forEach(r=>{r._udist=haversine(selUnload.la,selUnload.lo,r.ua,r.uo);});
+        if(selLoad){
+            nearest.forEach(r=>{
+                if(r.la && r.lo){
+                    r._ldist=haversine(selLoad.la,selLoad.lo,r.la,r.lo);
+                } else {
+                    const cc=CDB[r.ln];
+                    r._ldist=(cc&&cc.la&&cc.lo)?haversine(selLoad.la,selLoad.lo,cc.la,cc.lo):99999;
+                }
+            });
+        }
+        if(selUnload){
+            nearest.forEach(r=>{
+                if(r.ua && r.uo){
+                    r._udist=haversine(selUnload.la,selUnload.lo,r.ua,r.uo);
+                } else {
+                    const cc=CDB[r.un];
+                    r._udist=(cc&&cc.la&&cc.lo)?haversine(selUnload.la,selUnload.lo,cc.la,cc.lo):99999;
+                }
+            });
+        }
         if(selLoad)nearest.sort((a,b)=>(a._ldist||99999)-(b._ldist||99999));
         else nearest.sort((a,b)=>(a._udist||99999)-(b._udist||99999));
         nearest=nearest.slice(0,3);
