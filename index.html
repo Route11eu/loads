@@ -432,7 +432,6 @@ async function applyFilters(){
     if(uInp.value.trim()&&!selUnload)await resolveCity(uInp,v=>{selUnload=v;});
 
     const rad=parseInt(document.getElementById('radiusF').value);
-    const dtV=document.getElementById('dateF').value;
     const adrV=document.getElementById('adrF').value;
     const tankV=document.getElementById('tankF').value;
     let f=[...ROUTES];
