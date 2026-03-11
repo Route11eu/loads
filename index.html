@@ -9,6 +9,9 @@
 <title>Route11 — Available Tank Loads</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -173,8 +176,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--g800);li
 <div class="sg" style="flex:.6"><label>Radius</label>
 <select id="radiusF"><option value="50">50 km</option><option value="100" selected>100 km</option><option value="200">200 km</option><option value="500">500 km</option><option value="9999">No limit</option></select>
 </div>
-<div class="sg" style="flex:.55"><label>Date from</label><input type="date" id="dateFrom"></div>
-<div class="sg" style="flex:.55"><label>Date to</label><input type="date" id="dateTo"></div>
+<div class="sg" style="flex:.8"><label>📅 Date range</label><input type="text" id="dateRange" placeholder="Select dates..." readonly style="cursor:pointer"></div>
 <div class="sg" style="flex:.45"><label>ADR</label><select id="adrF"><option value="all">All</option><option value="yes">ADR</option><option value="no">No ADR</option></select></div>
 <div class="sg" style="flex:.45"><label>Chambers</label><select id="tankF"><option value="all">All</option><option value="MONO">MONO</option><option value="MULTI">MULTI</option></select></div>
 <div style="display:flex;gap:6px;align-items:flex-end"><button class="btn-s" onclick="applyFilters()">Search</button><button class="btn-r" onclick="resetFilters()">Reset</button></div>
@@ -294,12 +296,22 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 function populateDates(){
-    // Set default range: today to +14 days
-    const today=new Date();
-    const to=new Date(today);
-    to.setDate(to.getDate()+14);
-    document.getElementById('dateFrom').value=today.toISOString().slice(0,10);
-    document.getElementById('dateTo').value=to.toISOString().slice(0,10);
+    // Init Flatpickr date range calendar
+    window._fpDates = [];
+    window._fpInstance = flatpickr('#dateRange', {
+        mode: 'range',
+        dateFormat: 'd.m.Y',
+        minDate: 'today',
+        locale: { firstDayOfWeek: 1 },
+        onChange: function(selectedDates) {
+            window._fpDates = selectedDates;
+            if (selectedDates.length === 2) applyFilters();
+        },
+        onClose: function(selectedDates) {
+            window._fpDates = selectedDates;
+            applyFilters();
+        }
+    });
 }
 
 // AUTOCOMPLETE
@@ -485,10 +497,17 @@ async function applyFilters(){
     if(ltxt&&!selLoad) f=f.filter(r=>r.ln.toLowerCase().includes(ltxt)||r.lc.toLowerCase().includes(ltxt));
     if(utxt&&!selUnload) f=f.filter(r=>r.un.toLowerCase().includes(utxt)||r.uc.toLowerCase().includes(utxt));
 
-    const fromV=document.getElementById('dateFrom').value;
-    const toV=document.getElementById('dateTo').value;
-    if(fromV){const fromDate=new Date(fromV);f=f.filter(r=>{const rd=parseDt(r.dt);return rd>=fromDate;});}
-    if(toV){const toDate=new Date(toV);toDate.setHours(23,59,59);f=f.filter(r=>{const rd=parseDt(r.dt);return rd<=toDate;});}
+    // Date range filter (Flatpickr)
+    if(window._fpDates && window._fpDates.length > 0){
+        const from = new Date(window._fpDates[0]); from.setHours(0,0,0,0);
+        const to = window._fpDates.length > 1 ? new Date(window._fpDates[1]) : new Date(from);
+        to.setHours(23,59,59,999);
+        f=f.filter(r=>{
+            const rd=parseDt(r.dt);
+            rd.setHours(12,0,0,0);
+            return rd>=from && rd<=to;
+        });
+    }
     if(adrV==='yes')f=f.filter(r=>r.adr);
     if(adrV==='no')f=f.filter(r=>!r.adr);
     if(tankV!=='all')f=f.filter(r=>r.tk.includes(tankV));
@@ -546,8 +565,8 @@ function resetFilters(){
     document.getElementById('loadCity').value='';
     document.getElementById('unloadCity').value='';
     document.getElementById('radiusF').value='100';
-    document.getElementById('dateFrom').value='';
-    document.getElementById('dateTo').value='';
+    if(window._fpInstance) window._fpInstance.clear();
+    window._fpDates=[];
     document.getElementById('adrF').value='all';
     document.getElementById('tankF').value='all';
     selLoad=null;selUnload=null;
