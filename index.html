@@ -679,10 +679,12 @@ function renderRoutes(routes){
     const sd=Object.keys(dg).sort((a,b)=>parseDt(a)-parseDt(b));
     const CN={AT:'🇦🇹 AUSTRIA',BE:'🇧🇪 BELGIUM',BG:'🇧🇬 BULGARIA',CH:'🇨🇭 SWITZERLAND',CZ:'🇨🇿 CZECH REP.',DE:'🇩🇪 GERMANY',DK:'🇩🇰 DENMARK',EE:'🇪🇪 ESTONIA',ES:'🇪🇸 SPAIN',FI:'🇫🇮 FINLAND',FR:'🇫🇷 FRANCE',HR:'🇭🇷 CROATIA',HU:'🇭🇺 HUNGARY',IT:'🇮🇹 ITALY',LT:'🇱🇹 LITHUANIA',LU:'🇱🇺 LUXEMBOURG',LV:'🇱🇻 LATVIA',NL:'🇳🇱 NETHERLANDS',PL:'🇵🇱 POLAND',PT:'🇵🇹 PORTUGAL',RO:'🇷🇴 ROMANIA',SI:'🇸🇮 SLOVENIA',SK:'🇸🇰 SLOVAKIA'};
 
+    const DAYNAMES=['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
     sd.forEach(date=>{
         const dr=dg[date];
         const dh=document.createElement('div');dh.className='date-hdr';dh.id='dh-'+date.replace(/\./g,'');
-        dh.innerHTML=`<span>📅 ${dr[0].dy} ${date}</span><span class="cnt-badge">${dr.length} loads</span>`;
+        const computedDay=DAYNAMES[parseDt(date).getDay()];
+        dh.innerHTML=`<span>📅 ${computedDay} ${date}</span><span class="cnt-badge">${dr.length} loads</span>`;
         cnt.appendChild(dh);
 
         const cg={};dr.forEach(r=>{const c=r.lc.split('-')[0];if(!cg[c])cg[c]=[];cg[c].push(r);});
