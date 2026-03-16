@@ -197,7 +197,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--g800);li
 .chain-metrics{gap:8px}
 .chain-metric .val{font-size:16px}
 }
-</style>
+.leaflet-popup-content { max-height: 300px; overflow-y: auto; padding-right: 15px; } </style>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>emailjs.init("4RZ7570liDL0CVKFs");</script>
 </head>
@@ -787,7 +787,7 @@ function updateMap(routes){
     // Loading clusters
     Object.values(loadClusters).forEach(cl=>{
         let popupHtml=`<b>🔵 ${cl.city}</b><br><span style="color:#666">${cl.routes.length} load${cl.routes.length>1?'s':''}:</span><br>`;
-        cl.routes.slice(0,8).forEach(r=>{popupHtml+=`<span style="font-size:11px">→ ${r.un} (${r.dt}) </span><button onclick="openInq(${r.id})" style="background:#2d7ab9;color:#fff;border:none;padding:1px 6px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:4px">Inquire</button><br>`;});
+        cl.routes..forEach(r=>{popupHtml+=`<span style="font-size:11px">→ ${r.un} (${r.dt}) </span><button onclick="openInq(${r.id})" style="background:#2d7ab9;color:#fff;border:none;padding:1px 6px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:4px">Inquire</button><br>`;});
         if(cl.routes.length>8)popupHtml+=`<span style="font-size:11px;color:#999">+${cl.routes.length-8} more...</span>`;
         const m=L.marker([cl.lat,cl.lng],{icon:blueIcon}).addTo(mapI).bindPopup(popupHtml);
         mapM.push(m);bounds.push([cl.lat,cl.lng]);
@@ -806,7 +806,7 @@ function updateMap(routes){
                 return xc && xc.la.toFixed(2)===coords.la.toFixed(2) && xc.lo.toFixed(2)===coords.lo.toFixed(2);
             });
             let pop=`<b>🔴 ${r.un}</b><br><span style="color:#666">${ul.length} delivery${ul.length>1?'ies':''}:</span><br>`;
-            ul.slice(0,8).forEach(x=>{pop+=`<span style="font-size:11px">← ${x.ln} (${x.dt}) </span><button onclick="openInq(${x.id})" style="background:#c0392b;color:#fff;border:none;padding:1px 6px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:4px">Inquire</button><br>`;});
+            ul..forEach(x=>{pop+=`<span style="font-size:11px">← ${x.ln} (${x.dt}) </span><button onclick="openInq(${x.id})" style="background:#c0392b;color:#fff;border:none;padding:1px 6px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:4px">Inquire</button><br>`;});
             if(ul.length>8)pop+=`<span style="font-size:11px;color:#999">+${ul.length-8} more...</span>`;
             const m=L.marker([coords.la,coords.lo],{icon:redIcon}).addTo(mapI).bindPopup(pop);
             mapM.push(m);bounds.push([coords.la,coords.lo]);
